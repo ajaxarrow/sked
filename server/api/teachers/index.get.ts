@@ -1,0 +1,32 @@
+import { db } from '~/server/database/client'
+import { teachers, teacherSubjects, subjects, yearLevels } from '~/server/database/schema'
+import { eq } from 'drizzle-orm'
+
+export default defineEventHandler(async (event) => {
+  const { schoolId } = getQuery(event)
+  if (!schoolId) throw createError({ statusCode: 400, message: 'schoolId required' })
+
+  const teacherList = await db.select().from(teachers)
+    .where(eq(teachers.schoolId, parseInt(schoolId as string)))
+    .all()
+
+  const withSubjects = await Promise.all(teacherList.map(async (t) => {
+    const assignments = await db
+      .select({
+        id: teacherSubjects.id,
+        teacherId: teacherSubjects.teacherId,
+        subjectId: teacherSubjects.subjectId,
+        yearLevelId: teacherSubjects.yearLevelId,
+        subjectName: subjects.name,
+        yearLevelName: yearLevels.name,
+      })
+      .from(teacherSubjects)
+      .innerJoin(subjects, eq(teacherSubjects.subjectId, subjects.id))
+      .innerJoin(yearLevels, eq(teacherSubjects.yearLevelId, yearLevels.id))
+      .where(eq(teacherSubjects.teacherId, t.id))
+      .all()
+    return { ...t, subjects: assignments }
+  }))
+
+  return withSubjects
+})
