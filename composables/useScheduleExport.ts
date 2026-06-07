@@ -25,6 +25,7 @@ export interface MasterExportParams {
   scheduleSetName: string
   sections: ExportSection[]
   entries: ExportEntry[]
+  colorBy?: 'subject' | 'teacher'
 }
 
 export interface SectionExportParams {
@@ -32,6 +33,7 @@ export interface SectionExportParams {
   yearLabel: string
   sectionName: string
   entries: ExportEntry[]
+  colorBy?: 'subject' | 'teacher'
 }
 
 export interface TeacherTeachingEntry {
@@ -41,6 +43,7 @@ export interface TeacherTeachingEntry {
   subjectName: string | null
   subjectColor: string | null
   sectionName: string | null
+  teacherId?: string | null
 }
 
 export interface TeacherSpecialSlot {
@@ -54,9 +57,11 @@ export interface TeacherExportParams {
   schoolName: string
   yearLabel: string
   teacherName: string
+  teacherId?: string | null
   teachingEntries: TeacherTeachingEntry[]
   specialSlots: TeacherSpecialSlot[]
   allSlotTimes: Array<{ slotStartTime: string; slotEndTime: string }>
+  colorBy?: 'subject' | 'teacher'
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -99,6 +104,27 @@ function tint(hex: string, amount = 0.80): string {
   const tg = Math.round(g + (255 - g) * amount)
   const tb = Math.round(b + (255 - b) * amount)
   return `#${tr.toString(16).padStart(2, '0')}${tg.toString(16).padStart(2, '0')}${tb.toString(16).padStart(2, '0')}`
+}
+
+const TEACHER_COLORS = [
+  '#e05c5c', '#c0783a', '#a08810', '#4a9a4a', '#2e8b6e',
+  '#4a7fd4', '#6a50d0', '#a840c8', '#c84888', '#3aaecc',
+  '#7b6ea0', '#cf6679', '#5e9e6e', '#d4804a', '#5588d4',
+]
+
+function teacherColorFromId(id: string | null | undefined): string {
+  if (!id) return '#6366f1'
+  let h = 0
+  for (let i = 0; i < id.length; i++) {
+    h = ((h << 5) - h) + id.charCodeAt(i)
+    h |= 0
+  }
+  return TEACHER_COLORS[Math.abs(h) % TEACHER_COLORS.length]!
+}
+
+function resolveColor(subjectColor: string | null | undefined, teacherId: string | null | undefined, colorBy?: 'subject' | 'teacher'): string {
+  if (colorBy === 'teacher') return teacherColorFromId(teacherId)
+  return subjectColor ?? '#6366f1'
 }
 
 function specialStyle(label: string): { bg: string; color: string } {
@@ -241,6 +267,7 @@ function buildSectionTable(
   subHeading: string,
   entries: ExportEntry[],
   slots: Slot[],
+  colorBy?: 'subject' | 'teacher',
 ): string {
   const em = new Map<string, ExportEntry>()
   for (const e of entries) {
@@ -278,7 +305,7 @@ function buildSectionTable(
           const { bg, color } = specialStyle(e.specialLabel)
           rows += `<td bgcolor="${bg}" style="background-color:${bg};color:${color};font-style:italic;font-weight:600;">${esc(e.specialLabel)}</td>`
         } else if (e.subjectName) {
-          const color = e.subjectColor ?? '#6366f1'
+          const color = resolveColor(e.subjectColor, e.teacherId, colorBy)
           const bg    = tint(color)
           rows += `<td bgcolor="${bg}" style="background-color:${bg};">`
           rows += `<span class="sn" style="color:${color};">${esc(e.subjectName)}</span><br>`
@@ -315,6 +342,7 @@ interface NormTeachEntry {
   subjectName: string | null
   subjectColor: string | null
   sectionLabel: string | null
+  teacherId: string | null
 }
 
 function buildTeacherTable(
@@ -323,6 +351,7 @@ function buildTeacherTable(
   teachEntries: NormTeachEntry[],
   specials: Map<string, string>,     // `day|slotStart` → label
   slots: Slot[],
+  colorBy?: 'subject' | 'teacher',
 ): string {
   const tm = new Map<string, NormTeachEntry>()
   for (const e of teachEntries) tm.set(`${e.dayOfWeek}|${e.slotStartTime}`, e)
@@ -359,7 +388,7 @@ function buildTeacherTable(
         const e  = tm.get(`${day.num}|${slot.start}`)
         const sp = specials.get(`${day.num}|${slot.start}`)
         if (e?.subjectName) {
-          const color = e.subjectColor ?? '#6366f1'
+          const color = resolveColor(e.subjectColor, e.teacherId, colorBy)
           const bg    = tint(color)
           rows += `<td bgcolor="${bg}" style="background-color:${bg};">`
           rows += `<span class="sn" style="color:${color};">${esc(e.subjectName)}</span><br>`
@@ -469,7 +498,7 @@ function buildMasterTableHtml(params: MasterExportParams): string {
             const { bg, color } = specialStyle(e.specialLabel)
             rows += `<td bgcolor="${bg}" style="background-color:${bg};color:${color};font-style:italic;font-weight:600;font-size:7pt;">${esc(e.specialLabel)}</td>`
           } else if (e.subjectName) {
-            const color = e.subjectColor ?? '#6366f1'
+            const color = resolveColor(e.subjectColor, e.teacherId, params.colorBy)
             const bg    = tint(color)
             rows += `<td bgcolor="${bg}" style="background-color:${bg};">`
             rows += `<span class="sn" style="color:${color};font-size:7pt;">${esc(e.subjectName)}</span><br>`
@@ -505,13 +534,13 @@ function buildMasterTableHtml(params: MasterExportParams): string {
 // ── Multi-page builders (from master data) ────────────────────────────────────
 
 function buildAllSectionPages(params: MasterExportParams): string {
-  const { schoolName, yearLabel, scheduleSetName, sections, entries } = params
+  const { yearLabel, scheduleSetName, sections, entries } = params
   const slots  = collectSlots(entries)
   const sub    = `${yearLabel} — ${scheduleSetName}`
 
   return sections.map((sec, i) => {
     const secEntries = entries.filter(e => e.sectionId === sec.id)
-    const page       = buildSectionTable(sec.name, sub, secEntries, slots)
+    const page       = buildSectionTable(sec.name, sub, secEntries, slots, params.colorBy)
     return i === 0 ? page : `<div class="pb"></div>${page}`
   }).join('\n')
 }
@@ -556,8 +585,9 @@ function buildAllTeacherPages(params: MasterExportParams): string {
         subjectName:   e.subjectName,
         subjectColor:  e.subjectColor,
         sectionLabel:  secNames.get(e.sectionId) ?? null,
+        teacherId:     e.teacherId,
       }))
-    const page = buildTeacherTable(name, sub, normRows, specials, slots)
+    const page = buildTeacherTable(name, sub, normRows, specials, slots, params.colorBy)
     return i === 0 ? page : `<div class="pb"></div>${page}`
   }).join('\n')
 }
@@ -657,7 +687,7 @@ export function useScheduleExport() {
   function exportSectionSchedule(params: SectionExportParams): void {
     const slots = collectSlots(params.entries)
     const sub   = `Weekly Schedule — ${params.yearLabel}`
-    const html  = buildSectionTable(params.sectionName, sub, params.entries, slots)
+    const html  = buildSectionTable(params.sectionName, sub, params.entries, slots, params.colorBy)
     downloadDoc(html, `schedule-${params.sectionName}`, `${params.sectionName} – ${params.yearLabel}`)
   }
 
@@ -677,10 +707,11 @@ export function useScheduleExport() {
       subjectName:   e.subjectName,
       subjectColor:  e.subjectColor,
       sectionLabel:  e.sectionName,
+      teacherId:     e.teacherId ?? params.teacherId ?? null,
     }))
 
     const sub  = `Weekly Teaching Schedule — ${params.yearLabel}`
-    const html = buildTeacherTable(params.teacherName, sub, normRows, specials, slots)
+    const html = buildTeacherTable(params.teacherName, sub, normRows, specials, slots, params.colorBy)
     downloadDoc(html, `schedule-${params.teacherName}`, `${params.teacherName} – ${params.yearLabel}`)
   }
 

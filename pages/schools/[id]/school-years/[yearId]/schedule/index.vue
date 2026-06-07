@@ -613,7 +613,7 @@ function doExport(kind: 'master' | 'sections' | 'teachers' | 'load-doc' | 'simpl
     yearLabel:       year.value?.label ?? '',
     scheduleSetName: activeSet.value?.name ?? '',
   }
-  const masterBase = { ...base, sections: masterSchedule.value?.sections ?? [], entries: masterSchedule.value?.entries ?? [] }
+  const masterBase = { ...base, sections: masterSchedule.value?.sections ?? [], entries: masterSchedule.value?.entries ?? [], colorBy: colorBy.value }
 
   if (kind === 'master' || (kind === 'simple' && activeView.value === 'master')) {
     if (masterBase.entries.length) exportMasterSchedule(masterBase)
@@ -639,16 +639,18 @@ function doExport(kind: 'master' | 'sections' | 'teachers' | 'load-doc' | 'simpl
   }
   if (activeView.value === 'section' && sectionSchedule.value?.entries?.length) {
     const sec = sections.value?.find(s => s.id === activeSectionId.value)
-    exportSectionSchedule({ ...base, sectionName: sec?.name ?? 'Section', entries: sectionSchedule.value.entries })
+    exportSectionSchedule({ ...base, sectionName: sec?.name ?? 'Section', entries: sectionSchedule.value.entries, colorBy: colorBy.value })
     return
   }
   if (activeView.value === 'teacher' && teacherSchedule.value?.teacher) {
     exportTeacherSchedule({
       ...base,
       teacherName:     teacherSchedule.value.teacher.name,
+      teacherId:       teacherSchedule.value.teacher.id,
       teachingEntries: teacherSchedule.value.teachingEntries ?? [],
       specialSlots:    teacherSchedule.value.specialSlots ?? [],
       allSlotTimes:    teacherSchedule.value.allSlotTimes ?? [],
+      colorBy:         colorBy.value,
     })
   }
 }
