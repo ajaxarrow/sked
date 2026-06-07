@@ -130,19 +130,28 @@
         </div>
 
         <!-- View tabs -->
-        <div class="flex border-b mb-4" style="border-color: var(--color-border)">
-          <button
-            v-for="tab in viewTabs"
-            :key="tab.id"
-            class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-            :class="activeView === tab.id
-              ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-              : 'border-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)]'"
-            style="margin-bottom: -1px"
-            @click="switchTab(tab.id as 'master' | 'section' | 'teacher')"
-          >
-            {{ tab.label }}
-          </button>
+        <div class="flex items-center border-b mb-4" style="border-color: var(--color-border); justify-content: space-between">
+          <div class="flex">
+            <button
+              v-for="tab in viewTabs"
+              :key="tab.id"
+              class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+              :class="activeView === tab.id
+                ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                : 'border-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)]'"
+              style="margin-bottom: -1px"
+              @click="switchTab(tab.id as 'master' | 'section' | 'teacher')"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+          <div class="flex items-center gap-1.5 pb-2" v-if="activeView !== 'load'">
+            <span class="text-xs" style="color: var(--color-muted)">Color by:</span>
+            <div class="color-by-toggle">
+              <button :class="{ active: colorBy === 'subject' }" @click="colorBy = 'subject'">Subject</button>
+              <button :class="{ active: colorBy === 'teacher' }" @click="colorBy = 'teacher'">Teacher</button>
+            </div>
+          </div>
         </div>
 
         <!-- Master grid view -->
@@ -170,6 +179,7 @@
             :selected-day="swapSource?.dayOfWeek ?? null"
             :selected-time="swapSource?.slotStartTime ?? null"
             :selected-section="swapSource?.sectionId ?? null"
+            :color-by="colorBy"
             @cell-click="onCellClick"
           />
         </template>
@@ -212,6 +222,7 @@
             :slot-vacancies="sectionSchedule.slotVacancies ?? {}"
             :selected-day="swapSource?.dayOfWeek ?? null"
             :selected-time="swapSource?.slotStartTime ?? null"
+            :color-by="colorBy"
             @cell-click="onCellClick"
           />
 
@@ -256,6 +267,7 @@
             :selected-day="swapSource?.dayOfWeek ?? null"
             :selected-time="swapSource?.slotStartTime ?? null"
             :selected-section="swapSource?.sectionId ?? null"
+            :color-by="colorBy"
             @cell-click="onCellClick"
           />
         </template>
@@ -538,6 +550,7 @@ const { data: scheduleSets, refresh: refreshSets } = await useFetch<ScheduleSet[
 
 const activeSetId = ref<string | null>(null)
 const activeView = ref<'master' | 'section' | 'teacher' | 'load'>('master')
+const colorBy = ref<'subject' | 'teacher'>('teacher')
 const activeSectionId = ref<string | null>(null)
 const activeTeacherId = ref<string | null>(null)
 const generating = ref(false)
@@ -1029,6 +1042,36 @@ async function deleteActiveSet() {
 }
 
 /* ── Swap hint bar ───────────────────────────────────── */
+.color-by-toggle {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  overflow: hidden;
+  font-size: 0.6875rem;
+}
+.color-by-toggle button {
+  padding: 0.1875rem 0.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+.color-by-toggle button + button {
+  border-left: 1px solid var(--color-border);
+}
+.color-by-toggle button.active {
+  background: var(--color-primary, oklch(0.35 0.12 15));
+  color: white;
+}
+.color-by-toggle button:not(.active):hover {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
 .swap-hint-bar {
   display: flex;
   align-items: center;

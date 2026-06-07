@@ -51,13 +51,14 @@ export default defineEventHandler(async (event) => {
     extraBreaks: config?.extraBreaks ?? [],
     flagCeremony: config?.flagCeremony ?? { enabled: false, startTime: '07:00', endTime: '07:30', days: 'monday' },
     maxHoursPerTeacherPerDay: config?.maxHoursPerTeacherPerDay ?? 6,
+    adviserFirstSlot: config?.adviserFirstSlot ?? false,
   }
 
   const slots = generateTimeSlots(params)
 
   // Pre-load all section data and requirements once — reused across all retry attempts
   type SectionData = {
-    section: { id: string; name: string; yearLevelId: number }
+    section: { id: string; name: string; yearLevelId: number; adviserId: string | null }
     requirements: SubjectRequirement[]
   }
 
@@ -119,6 +120,7 @@ export default defineEventHandler(async (event) => {
     const sectionsForScheduler = sectionData.map(({ section, requirements }) => ({
       sectionId: section.id,
       requirements,
+      adviserTeacherId: section.adviserId ?? undefined,
     }))
     const allEntriesMap = generateAllSchedules(sectionsForScheduler, params, ctx)
 

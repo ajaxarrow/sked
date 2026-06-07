@@ -63,7 +63,7 @@
                   v-if="getTeaching(day.num, slot.slotStartTime)"
                   class="tg-teaching-chip tg-teaching-chip--clickable"
                   :class="{ 'tg-teaching-chip--selected': props.selectedDay === day.num && props.selectedTime === slot.slotStartTime && props.selectedSection === getTeaching(day.num, slot.slotStartTime)!.sectionId }"
-                  :style="{ background: subjectBg(getTeaching(day.num, slot.slotStartTime)!.subjectColor), color: getTeaching(day.num, slot.slotStartTime)!.subjectColor || 'var(--color-ink)' }"
+                  :style="{ background: subjectBg(getTeaching(day.num, slot.slotStartTime)!), color: subjectFg(getTeaching(day.num, slot.slotStartTime)!) }"
                   title="Click to find conflict-free swap options"
                   @click="emit('cell-click', getTeaching(day.num, slot.slotStartTime)!)"
                 >
@@ -128,6 +128,7 @@ const props = defineProps<{
   selectedDay?: number | null
   selectedTime?: string | null
   selectedSection?: string | null
+  colorBy?: 'subject' | 'teacher'
 }>()
 
 const emit = defineEmits<{
@@ -202,9 +203,32 @@ const assignedSubjects = computed(() => {
   return [...new Map(items.map((item) => [item.subjectName + '|' + item.sectionName, item])).values()]
 })
 
-function subjectBg(hex?: string | null) {
-  if (!hex) return 'var(--color-surface)'
-  return hex + '22'
+const TEACHER_COLORS = [
+  '#e05c5c', '#c0783a', '#a08810', '#4a9a4a', '#2e8b6e',
+  '#4a7fd4', '#6a50d0', '#a840c8', '#c84888', '#3aaecc',
+  '#7b6ea0', '#cf6679', '#5e9e6e', '#d4804a', '#5588d4',
+]
+
+function teacherColorFromId(id: string): string {
+  let h = 0
+  for (let i = 0; i < id.length; i++) {
+    h = ((h << 5) - h) + id.charCodeAt(i)
+    h |= 0
+  }
+  return TEACHER_COLORS[Math.abs(h) % TEACHER_COLORS.length]!
+}
+
+function cellColor(_entry: TeachingEntry): string {
+  if (props.colorBy === 'teacher') return teacherColorFromId(props.teacher.id)
+  return _entry.subjectColor ?? '#6366f1'
+}
+
+function subjectBg(entry: TeachingEntry) {
+  return cellColor(entry) + '22'
+}
+
+function subjectFg(entry: TeachingEntry) {
+  return cellColor(entry)
 }
 
 function specialClass(label: string) {

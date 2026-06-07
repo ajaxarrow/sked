@@ -171,7 +171,24 @@ async function main() {
   const db = drizzle(sqlite, { schema })
 
   const slots = generateTimeSlots(params)
-  console.log(`Config: ${slots.length} slots/day × 5 days = ${slots.length * 5} total slots`)
+
+  // Compute available slots after day-specific blocks (flag ceremony, day-only extra breaks)
+  function toMin(t: string) { const [h, m] = t.split(':').map(Number); return h! * 60 + m! }
+  const dayBlocked = [0, 0, 0, 0, 0]
+  for (const brk of (params.extraBreaks ?? [])) {
+    const days = brk.days?.length ? brk.days : [1, 2, 3, 4, 5]
+    const brkSlotCount = slots.filter(s => toMin(s.start) >= toMin(brk.startTime) && toMin(s.end) <= toMin(brk.endTime)).length
+    for (const d of days) dayBlocked[d - 1]! += brkSlotCount
+  }
+  if (params.flagCeremony?.enabled) {
+    const fc = params.flagCeremony
+    const fcSlotCount = slots.filter(s => toMin(s.start) < toMin(fc.endTime) && toMin(s.end) > toMin(fc.startTime)).length
+    const fcDays = fc.days === 'everyday' ? [1,2,3,4,5] : fc.days === 'monday' ? [1] : fc.days as number[]
+    for (const d of fcDays) dayBlocked[d - 1]! += fcSlotCount
+  }
+  const available = slots.length * 5 - dayBlocked.reduce((s, c) => s + c, 0)
+
+  console.log(`Config: ${slots.length} slots/day × 5 days = ${available} available slots (${slots.length * 5 - available} blocked by flag/day-breaks)`)
   console.log(`Slots: ${slots.map(s => s.start).join(' | ')}\n`)
 
   const allSections = await db.select({

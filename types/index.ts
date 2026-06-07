@@ -110,6 +110,7 @@ export interface GenerateScheduleConfig {
   lunchEnd: string
   slotDurationMinutes: number
   avoidConsecutiveSameSubject: boolean
+  adviserFirstSlot: boolean
   extraBreaks: Array<{ label: string; startTime: string; endTime: string }>
   flagCeremony: FlagCeremonyConfig
 }

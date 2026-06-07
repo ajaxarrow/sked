@@ -68,7 +68,7 @@
                       <div
                         class="subject-chip subject-chip--clickable"
                         :class="{ 'subject-chip--selected': props.selectedDay === day.num && props.selectedTime === slot.start && props.selectedSection === sec.id }"
-                        :style="{ background: subjectBg((getEntry(sec.id, day.num, slot.start) as any)?.subjectColor), color: subjectFg((getEntry(sec.id, day.num, slot.start) as any)?.subjectColor) }"
+                        :style="{ background: subjectBg(getEntry(sec.id, day.num, slot.start)!), color: subjectFg(getEntry(sec.id, day.num, slot.start)!) }"
                         title="Click to find conflict-free swap options"
                         @click="emit('cell-click', getEntry(sec.id, day.num, slot.start)!)"
                       >
@@ -113,6 +113,7 @@ const props = defineProps<{
   selectedDay?: number | null
   selectedTime?: string | null
   selectedSection?: string | null
+  colorBy?: 'subject' | 'teacher'
 }>()
 
 const emit = defineEmits<{
@@ -203,14 +204,33 @@ function specialClass(label: string) {
   return '' // default blue for flag ceremony, programs, etc.
 }
 
-function subjectBg(hex?: string | null) {
-  if (!hex) return 'var(--color-surface)'
-  return hex + '22'
+const TEACHER_COLORS = [
+  '#e05c5c', '#c0783a', '#a08810', '#4a9a4a', '#2e8b6e',
+  '#4a7fd4', '#6a50d0', '#a840c8', '#c84888', '#3aaecc',
+  '#7b6ea0', '#cf6679', '#5e9e6e', '#d4804a', '#5588d4',
+]
+
+function teacherColor(teacherId: string | null | undefined): string {
+  if (!teacherId) return '#6366f1'
+  let h = 0
+  for (let i = 0; i < teacherId.length; i++) {
+    h = ((h << 5) - h) + teacherId.charCodeAt(i)
+    h |= 0
+  }
+  return TEACHER_COLORS[Math.abs(h) % TEACHER_COLORS.length]!
 }
 
-function subjectFg(hex?: string | null) {
-  if (!hex) return 'var(--color-ink)'
-  return hex
+function cellColor(entry: ScheduleEntry): string {
+  if (props.colorBy === 'teacher') return teacherColor(entry.teacherId)
+  return entry.subjectColor ?? '#6366f1'
+}
+
+function subjectBg(entry: ScheduleEntry) {
+  return cellColor(entry) + '22'
+}
+
+function subjectFg(entry: ScheduleEntry) {
+  return cellColor(entry)
 }
 
 // ── Vacant teachers ────────────────────────────────────────────────────────

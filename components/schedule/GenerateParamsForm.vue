@@ -85,21 +85,39 @@
       </div>
 
       <!-- Consecutive subject constraint -->
-      <div class="flex items-center justify-between py-1" style="border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border)">
-        <div>
-          <p class="text-sm font-medium" style="color: var(--color-ink)">Avoid same subject on consecutive days</p>
-          <p class="text-xs" style="color: var(--color-muted)">e.g. Math at 7am Mon won't appear at 7am Tue</p>
+      <div class="space-y-0" style="border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border)">
+        <div class="flex items-center justify-between py-1">
+          <div>
+            <p class="text-sm font-medium" style="color: var(--color-ink)">Avoid same subject on consecutive days</p>
+            <p class="text-xs" style="color: var(--color-muted)">e.g. Math at 7am Mon won't appear at 7am Tue</p>
+          </div>
+          <button
+            class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
+            :style="local.avoidConsecutiveSameSubject ? 'background: var(--color-primary)' : 'background: var(--color-border-strong)'"
+            @click="local.avoidConsecutiveSameSubject = !local.avoidConsecutiveSameSubject"
+          >
+            <span
+              class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+              :class="local.avoidConsecutiveSameSubject ? 'translate-x-4' : 'translate-x-0.5'"
+            />
+          </button>
         </div>
-        <button
-          class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
-          :style="local.avoidConsecutiveSameSubject ? 'background: var(--color-primary)' : 'background: var(--color-border-strong)'"
-          @click="local.avoidConsecutiveSameSubject = !local.avoidConsecutiveSameSubject"
-        >
-          <span
-            class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-            :class="local.avoidConsecutiveSameSubject ? 'translate-x-4' : 'translate-x-0.5'"
-          />
-        </button>
+        <div class="flex items-center justify-between py-1" style="border-top: 1px solid var(--color-border)">
+          <div>
+            <p class="text-sm font-medium" style="color: var(--color-ink)">Adviser teaches first class (Tue–Fri)</p>
+            <p class="text-xs" style="color: var(--color-muted)">Adviser's subject is placed first each day; overrides consecutive-day rule</p>
+          </div>
+          <button
+            class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
+            :style="local.adviserFirstSlot ? 'background: var(--color-primary)' : 'background: var(--color-border-strong)'"
+            @click="local.adviserFirstSlot = !local.adviserFirstSlot"
+          >
+            <span
+              class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+              :class="local.adviserFirstSlot ? 'translate-x-4' : 'translate-x-0.5'"
+            />
+          </button>
+        </div>
       </div>
 
       <!-- Extra Vacant Periods -->
@@ -245,6 +263,7 @@ const local = reactive({
   lunchEnd: '13:00',
   slotDurationMinutes: 60,
   avoidConsecutiveSameSubject: true,
+  adviserFirstSlot: false,
   flagCeremony: {
     enabled: false,
     startTime: '07:00',
@@ -264,6 +283,7 @@ watch(() => props.initialConfig, (cfg) => {
   if (cfg.lunchEnd !== undefined) local.lunchEnd = cfg.lunchEnd
   if (cfg.slotDurationMinutes !== undefined) local.slotDurationMinutes = cfg.slotDurationMinutes
   if (cfg.avoidConsecutiveSameSubject !== undefined) local.avoidConsecutiveSameSubject = cfg.avoidConsecutiveSameSubject
+  if (cfg.adviserFirstSlot !== undefined) local.adviserFirstSlot = cfg.adviserFirstSlot
   if (cfg.flagCeremony) {
     if (cfg.flagCeremony.enabled !== undefined) local.flagCeremony.enabled = cfg.flagCeremony.enabled
     if (cfg.flagCeremony.startTime !== undefined) local.flagCeremony.startTime = cfg.flagCeremony.startTime

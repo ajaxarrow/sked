@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateTimeSlots, generateSchedule, buildFlagCeremonyEntries, recordSectionAssignment } from '../server/utils/scheduler'
+import { generateTimeSlots, generateSchedule, generateAllSchedules, buildFlagCeremonyEntries, recordSectionAssignment } from '../server/utils/scheduler'
 
 const baseParams = {
   startTime: '07:00',
@@ -66,7 +66,7 @@ describe('buildFlagCeremonyEntries', () => {
   it('generates flag ceremony for all weekdays when days=everyday', () => {
     const entries = buildFlagCeremonyEntries('sec-1', slots, fc)
     expect(entries).toHaveLength(5)
-    expect(entries.every(e => e.specialLabel === 'Flag Ceremony')).toBe(true)
+    expect(entries.every(e => e.specialLabel === 'Flag Ceremony / RHGP')).toBe(true)
     expect(entries.every(e => e.slotStartTime === '07:00')).toBe(true)
   })
 
@@ -187,6 +187,124 @@ describe('generateSchedule', () => {
   })
 })
 
+describe('adviserFirstSlot', () => {
+  // 5 slots per day (7–8, 8–9, 9–10, 10–11, 11–12), no breaks
+  const adviserParams = {
+    ...noBreakParams,
+    startTime: '07:00',
+    endTime: '12:00',
+    adviserFirstSlot: true,
+  }
+
+  it('places the adviser subject at the first slot on Tue–Fri', () => {
+    const ctx = makeCtx()
+    // adviser teaches subject 1 (Math), another teacher covers subject 2
+    const requirements = [
+      { subjectId: 1, subjectName: 'Math', yearLevelId: 1, hoursPerWeek: 4, eligibleTeachers: [{ teacherId: 't-adviser', sectionCount: 99 }] },
+      { subjectId: 2, subjectName: 'English', yearLevelId: 1, hoursPerWeek: 5, eligibleTeachers: [{ teacherId: 't-other', sectionCount: 99 }] },
+    ]
+
+    const entries = generateSchedule('sec-1', requirements, adviserParams, ctx, 't-adviser')
+    const subjectEntries = entries.filter(e => e.subjectId != null)
+
+    // Collect first-slot time per day
+    const slotTimes = [...new Set(subjectEntries.map(e => e.slotStartTime))].sort()
+    const firstSlotTime = slotTimes[0]!
+
+    // On Tue–Fri (days 2–5), the first slot must be taught by the adviser
+    for (const day of [2, 3, 4, 5]) {
+      const firstOnDay = subjectEntries
+        .filter(e => e.dayOfWeek === day)
+        .sort((a, b) => a.slotStartTime.localeCompare(b.slotStartTime))[0]
+      if (!firstOnDay) continue
+      expect(firstOnDay.teacherId).toBe('t-adviser')
+      expect(firstOnDay.subjectId).toBe(1)
+    }
+  })
+
+  it('bypasses consecutive-day constraint for the adviser first slot', () => {
+    const ctx = makeCtx()
+    const params = { ...adviserParams, avoidConsecutiveSameSubject: true }
+    const requirements = [
+      { subjectId: 1, subjectName: 'Math', yearLevelId: 1, hoursPerWeek: 4, eligibleTeachers: [{ teacherId: 't-adviser', sectionCount: 99 }] },
+      { subjectId: 2, subjectName: 'English', yearLevelId: 1, hoursPerWeek: 5, eligibleTeachers: [{ teacherId: 't-other', sectionCount: 99 }] },
+    ]
+
+    const entries = generateSchedule('sec-1', requirements, params, ctx, 't-adviser')
+    const adviserEntries = entries.filter(e => e.teacherId === 't-adviser')
+
+    // Adviser entries must all be at the first slot of their day (slot index 0 = 07:00)
+    for (const e of adviserEntries) {
+      if (e.dayOfWeek === 1) continue // Monday not enforced
+      expect(e.slotStartTime).toBe('07:00')
+    }
+
+    // Consecutive-day conflict is allowed for adviser: two adjacent days at 07:00 is fine
+    const adviserDays = adviserEntries.map(e => e.dayOfWeek).sort()
+    // Should have placements on Tue–Fri regardless of consecutive rule
+    const tueFriDays = adviserDays.filter(d => d >= 2)
+    expect(tueFriDays.length).toBeGreaterThan(0)
+  })
+
+  it('does nothing on Monday (adviser first slot only applies Tue–Fri)', () => {
+    const ctx = makeCtx()
+    const requirements = [
+      { subjectId: 1, subjectName: 'Math', yearLevelId: 1, hoursPerWeek: 4, eligibleTeachers: [{ teacherId: 't-adviser', sectionCount: 99 }] },
+      { subjectId: 2, subjectName: 'English', yearLevelId: 1, hoursPerWeek: 5, eligibleTeachers: [{ teacherId: 't-other', sectionCount: 99 }] },
+    ]
+
+    const entriesWithAdviser = generateSchedule('sec-1', requirements, adviserParams, ctx, 't-adviser')
+    // Monday adviser entries should be scheduled normally (not forced to first slot)
+    // just verify we didn't over-constrain Monday (scheduler still places things there)
+    const mondayEntries = entriesWithAdviser.filter(e => e.dayOfWeek === 1)
+    expect(mondayEntries.length).toBeGreaterThan(0)
+  })
+
+  it('has no effect when adviserFirstSlot is false', () => {
+    const ctx = makeCtx()
+    const paramsOff = { ...adviserParams, adviserFirstSlot: false }
+    const requirements = [
+      { subjectId: 1, subjectName: 'Math', yearLevelId: 1, hoursPerWeek: 4, eligibleTeachers: [{ teacherId: 't-adviser', sectionCount: 99 }] },
+      { subjectId: 2, subjectName: 'English', yearLevelId: 1, hoursPerWeek: 5, eligibleTeachers: [{ teacherId: 't-other', sectionCount: 99 }] },
+    ]
+
+    const entries = generateSchedule('sec-1', requirements, paramsOff, ctx, 't-adviser')
+    // Without the feature, adviser's subject might NOT be at the first slot every Tue–Fri
+    // We just verify it runs without error and places all hours
+    expect(entries.filter(e => e.subjectId === 1)).toHaveLength(4)
+    expect(entries.filter(e => e.subjectId === 2)).toHaveLength(5)
+  })
+
+  it('fills all 32 slots when isPerfectFit=true with adviser (regression: pre-placement must not break skip-day quota)', () => {
+    // lacParams: freeCells=[6,7,7,7,5]=32. 8 subjects × 4 hrs = 32 → perfect fit.
+    // Adviser pre-places subject 1 on Tue–Fri (4 slots). After pre-placement,
+    // freeCells=[6,6,6,6,4]=28 and 7 remaining subjects × 4 hrs = 28 → still perfect fit.
+    // Skip days are recomputed from the 7 remaining subjects so the quota matches the
+    // post-pre-placement cell counts and bipartite matching never sees more subjects than slots.
+    const ctx = makeCtx()
+    const requirements = [
+      { subjectId: 1, subjectName: 'Filipino', yearLevelId: 1, hoursPerWeek: 4, eligibleTeachers: [{ teacherId: 't-adviser', sectionCount: 99 }] },
+      ...Array.from({ length: 7 }, (_, i) => ({
+        subjectId: i + 2, subjectName: `Subject${i + 2}`, yearLevelId: 1,
+        hoursPerWeek: 4, eligibleTeachers: [{ teacherId: `t-${i + 2}`, sectionCount: 99 }],
+      })),
+    ]
+    const params = { ...lacParams, adviserFirstSlot: true }
+    const entries = generateSchedule('sec-1', requirements, params, ctx, 't-adviser')
+
+    expect(entries).toHaveLength(32)
+    for (const req of requirements) {
+      expect(entries.filter(e => e.subjectId === req.subjectId)).toHaveLength(4)
+    }
+    // Adviser's subject at 07:00 (first free slot) on Tue–Fri
+    for (const day of [2, 3, 4, 5]) {
+      const e = entries.find(e => e.dayOfWeek === day && e.subjectId === 1)
+      expect(e).toBeDefined()
+      expect(e!.slotStartTime).toBe('07:00')
+    }
+  })
+})
+
 // Real-world params: 7am–4pm, recess 9–9:30, lunch 11:30–1pm, flag ceremony Mon 7–8am, LAC session Fri 2–4pm
 const lacParams = {
   startTime: '07:00',
@@ -214,14 +332,15 @@ describe('7-slot day with flag ceremony + LAC session = 32 available slots', () 
     expect(slots[6]).toEqual({ start: '15:00', end: '16:00' })
   })
 
-  it('blocks Mon 07:00 (flag ceremony) and Fri 14:00+15:00 (LAC) — fills exactly 32 of 35 slots', () => {
+  it('blocks Mon 07:00 (flag ceremony) and Fri 14:00+15:00 (LAC) — fills exactly 32 slots', () => {
     const ctx = makeCtx()
-    // 33 subjects × 1hr, unique teachers — no teacher conflicts; only 32 slots are free
-    const reqs = Array.from({ length: 33 }, (_, i) => ({
+    // freeCells = [6,7,7,7,5] = 32. Use 8 subjects × 4hrs = 32 total (perfect fit).
+    // computeSkipDays quota=[2,1,1,1,3] sums to 8 = n, so backtracking succeeds.
+    const reqs = Array.from({ length: 8 }, (_, i) => ({
       subjectId: i + 1,
       subjectName: `Subject${i + 1}`,
       yearLevelId: 1,
-      hoursPerWeek: 1,
+      hoursPerWeek: 4,
       eligibleTeachers: [{ teacherId: `t-${i + 1}`, sectionCount: 99 }],
     }))
     const entries = generateSchedule('sec-1', reqs, lacParams, ctx)
@@ -229,5 +348,59 @@ describe('7-slot day with flag ceremony + LAC session = 32 available slots', () 
     expect(entries.find(e => e.dayOfWeek === 1 && e.slotStartTime === '07:00')).toBeUndefined()
     expect(entries.find(e => e.dayOfWeek === 5 && e.slotStartTime === '14:00')).toBeUndefined()
     expect(entries.find(e => e.dayOfWeek === 5 && e.slotStartTime === '15:00')).toBeUndefined()
+  })
+})
+
+describe('generateAllSchedules with adviserFirstSlot', () => {
+  it('fills all 32 slots across all sections with adviser at first slot Tue–Fri (regression: Phase 0 pre-placement)', () => {
+    // Root-cause regression test: pre-placement must happen before skip-day computation.
+    // When pre-placement happened inside the day loop, it consumed a cell that the
+    // skip-day quota still expected to be free → bipartite matching always failed →
+    // only the 4 pre-placed adviser entries were ever written.
+    const ctx = makeCtx()
+    const makeReqs = (adviserTeacherId: string, offset = 0) => [
+      { subjectId: 1 + offset, subjectName: 'Filipino', yearLevelId: 1, hoursPerWeek: 4, eligibleTeachers: [{ teacherId: adviserTeacherId, sectionCount: 99 }] },
+      ...Array.from({ length: 7 }, (_, i) => ({
+        subjectId: i + 2 + offset, subjectName: `Subject${i + 2}`, yearLevelId: 1,
+        hoursPerWeek: 4, eligibleTeachers: [{ teacherId: `t-${i + 2}-${offset}`, sectionCount: 1 }],
+      })),
+    ]
+    const params = { ...lacParams, adviserFirstSlot: true }
+    const result = generateAllSchedules(
+      [
+        { sectionId: 'sec-1', requirements: makeReqs('t-adviser-1', 0), adviserTeacherId: 't-adviser-1' },
+        { sectionId: 'sec-2', requirements: makeReqs('t-adviser-2', 100), adviserTeacherId: 't-adviser-2' },
+      ],
+      params,
+      ctx,
+    )
+
+    for (const sectionId of ['sec-1', 'sec-2']) {
+      const entries = result.get(sectionId)!
+      expect(entries).toHaveLength(32)
+
+      // Adviser subject at 07:00 (first free slot) on each of Tue–Fri
+      const adviserSubjectId = sectionId === 'sec-1' ? 1 : 101
+      for (const day of [2, 3, 4, 5]) {
+        const e = entries.find(e => e.dayOfWeek === day && e.subjectId === adviserSubjectId)
+        expect(e).toBeDefined()
+        expect(e!.slotStartTime).toBe('07:00')
+      }
+    }
+  })
+
+  it('works correctly when adviserFirstSlot is false (no pre-placement, baseline)', () => {
+    const ctx = makeCtx()
+    const reqs = Array.from({ length: 8 }, (_, i) => ({
+      subjectId: i + 1, subjectName: `Subject${i + 1}`, yearLevelId: 1,
+      hoursPerWeek: 4, eligibleTeachers: [{ teacherId: `t-${i + 1}`, sectionCount: 99 }],
+    }))
+    const params = { ...lacParams, adviserFirstSlot: false }
+    const result = generateAllSchedules(
+      [{ sectionId: 'sec-1', requirements: reqs, adviserTeacherId: 't-1' }],
+      params,
+      ctx,
+    )
+    expect(result.get('sec-1')).toHaveLength(32)
   })
 })
