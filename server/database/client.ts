@@ -9,12 +9,12 @@ import { fileURLToPath } from 'url'
 function resolveDbPath(): string {
   if (process.env.DATABASE_PATH) {
     if (!existsSync(process.env.DATABASE_PATH)) {
-      // Try cwd first, then next to the server bundle
       const here = typeof __dirname !== 'undefined'
         ? __dirname
         : dirname(fileURLToPath(import.meta.url))
       const candidates = ['/seed.db', join(process.cwd(), 'sked.db'), join(here, 'sked.db')]
       const seed = candidates.find(existsSync)
+      // If a seed exists copy it; otherwise SQLite creates a fresh DB and migrations set up the schema
       if (seed) copyFileSync(seed, process.env.DATABASE_PATH)
     }
     return process.env.DATABASE_PATH

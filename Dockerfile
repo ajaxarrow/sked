@@ -6,7 +6,7 @@ COPY package*.json ./
 RUN npm ci --legacy-peer-deps
 
 COPY . .
-RUN npm run build && cp sked.db /seed.db
+RUN npm run build && cp sked.db /seed.db && mkdir -p /data
 
 ENV PORT=3000
 ENV NODE_ENV=production
