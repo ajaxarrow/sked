@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!schoolId) throw createError({ statusCode: 400, message: 'schoolId required' })
 
   const teacherList = await db.select().from(teachers)
-    .where(eq(teachers.schoolId, parseInt(schoolId as string)))
+    .where(eq(teachers.schoolId, schoolId as string))
     .all()
 
   const withSubjects = await Promise.all(teacherList.map(async (t) => {
@@ -17,6 +17,7 @@ export default defineEventHandler(async (event) => {
         teacherId: teacherSubjects.teacherId,
         subjectId: teacherSubjects.subjectId,
         yearLevelId: teacherSubjects.yearLevelId,
+        sectionCount: teacherSubjects.sectionCount,
         subjectName: subjects.name,
         yearLevelName: yearLevels.name,
       })

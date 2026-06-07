@@ -3,7 +3,7 @@ import { teachers, teacherSubjects } from '~/server/database/schema'
 import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
-  const id = parseInt(getRouterParam(event, 'id')!)
+  const id = getRouterParam(event, 'id')!
   const body = await readBody(event)
 
   const [updated] = await db.update(teachers).set({
@@ -17,10 +17,11 @@ export default defineEventHandler(async (event) => {
   await db.delete(teacherSubjects).where(eq(teacherSubjects.teacherId, id))
   if (body.assignments?.length) {
     await db.insert(teacherSubjects).values(
-      body.assignments.map((a: { subjectId: number; yearLevelId: number }) => ({
+      body.assignments.map((a: { subjectId: number; yearLevelId: number; sectionCount?: number }) => ({
         teacherId: id,
         subjectId: a.subjectId,
         yearLevelId: a.yearLevelId,
+        sectionCount: a.sectionCount ?? 1,
       })),
     )
   }

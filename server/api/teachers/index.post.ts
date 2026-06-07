@@ -15,10 +15,11 @@ export default defineEventHandler(async (event) => {
 
   if (body.assignments?.length) {
     await db.insert(teacherSubjects).values(
-      body.assignments.map((a: { subjectId: number; yearLevelId: number }) => ({
+      body.assignments.map((a: { subjectId: number; yearLevelId: number; sectionCount?: number }) => ({
         teacherId: teacher!.id,
         subjectId: a.subjectId,
         yearLevelId: a.yearLevelId,
+        sectionCount: a.sectionCount ?? 1,
       })),
     )
   }

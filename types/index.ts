@@ -1,5 +1,5 @@
 export interface School {
-  id: number
+  id: string
   name: string
   address: string | null
   phone: string | null
@@ -9,7 +9,7 @@ export interface School {
 
 export interface ScheduleType {
   id: number
-  schoolId: number
+  schoolId: string
   name: string
 }
 
@@ -30,8 +30,8 @@ export interface Subject {
 }
 
 export interface SchoolYear {
-  id: number
-  schoolId: number
+  id: string
+  schoolId: string
   scheduleTypeId: number
   label: string
   isActive: boolean | null
@@ -39,8 +39,8 @@ export interface SchoolYear {
 }
 
 export interface Teacher {
-  id: number
-  schoolId: number
+  id: string
+  schoolId: string
   name: string
   maxHoursPerWeek: number
   maxHoursPerDay: number
@@ -49,26 +49,59 @@ export interface Teacher {
 
 export interface TeacherSubjectAssignment {
   id: number
-  teacherId: number
+  teacherId: string
   subjectId: number
   yearLevelId: number
+  sectionCount: number
   subjectName: string
   yearLevelName: string
 }
 
 export interface Section {
-  id: number
-  schoolYearId: number
+  id: string
+  schoolYearId: string
   yearLevelId: number
   name: string
-  adviserId: number | null
+  adviserId: string | null
   adviserName?: string | null
   yearLevelName?: string
 }
 
-export interface ScheduleConfig {
+export interface ScheduleSet {
+  id: string
+  schoolYearId: string
+  name: string
+  createdAt: string | null
+}
+
+export interface ScheduleEntry {
   id: number
-  sectionId: number
+  scheduleSetId: string
+  sectionId: string
+  subjectId: number | null
+  teacherId: string | null
+  dayOfWeek: number
+  slotStartTime: string
+  slotEndTime: string
+  subjectName: string | null
+  subjectColor: string | null
+  teacherName: string | null
+  specialLabel: string | null
+}
+
+export interface VacantTeacher {
+  teacherId: string
+  teacherName: string
+}
+
+export interface FlagCeremonyConfig {
+  enabled: boolean
+  startTime: string
+  endTime: string
+  days: 'everyday' | 'monday' | number[]
+}
+
+export interface GenerateScheduleConfig {
   startTime: string
   endTime: string
   recessStart: string
@@ -77,50 +110,14 @@ export interface ScheduleConfig {
   lunchEnd: string
   slotDurationMinutes: number
   avoidConsecutiveSameSubject: boolean
-  extraBreaks: ExtraBreak[]
-}
-
-export interface ExtraBreak {
-  id?: number
-  startTime: string
-  endTime: string
-  label: string | null
-}
-
-export interface ScheduleEntry {
-  id: number
-  sectionId: number
-  subjectId: number
-  teacherId: number
-  dayOfWeek: number
-  slotStartTime: string
-  slotEndTime: string
-  subjectName: string
-  subjectColor: string
-  teacherName: string
-}
-
-export interface VacantTeacher {
-  teacherId: number
-  teacherName: string
-}
-
-export interface ScheduleSlot {
-  start: string
-  end: string
+  extraBreaks: Array<{ label: string; startTime: string; endTime: string }>
+  flagCeremony: FlagCeremonyConfig
 }
 
 export interface GenerateSchedulePayload {
-  sectionIds: number[]
-  config: {
-    startTime: string
-    endTime: string
-    recessStart: string
-    recessEnd: string
-    lunchStart: string
-    lunchEnd: string
-    slotDurationMinutes: number
-    avoidConsecutiveSameSubject: boolean
-    extraBreaks: Array<{ startTime: string; endTime: string; label: string }>
-  }
+  scheduleSetId?: string
+  scheduleName?: string
+  schoolYearId: string
+  sectionIds: string[]
+  config: GenerateScheduleConfig
 }

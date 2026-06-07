@@ -3,7 +3,7 @@ import { teachers, teacherSubjects, subjects, yearLevels } from '~/server/databa
 import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
-  const id = parseInt(getRouterParam(event, 'id')!)
+  const id = getRouterParam(event, 'id')!
   const [teacher] = await db.select().from(teachers).where(eq(teachers.id, id))
   if (!teacher) throw createError({ statusCode: 404, message: 'Teacher not found' })
 
@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
       teacherId: teacherSubjects.teacherId,
       subjectId: teacherSubjects.subjectId,
       yearLevelId: teacherSubjects.yearLevelId,
+      sectionCount: teacherSubjects.sectionCount,
       subjectName: subjects.name,
       yearLevelName: yearLevels.name,
     })

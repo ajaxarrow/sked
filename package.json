@@ -7,7 +7,9 @@
     "build": "nuxt build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:seed": "npx tsx scripts/seed.ts",
+    "db:reset": "node -e \"['sked.db','sked.db-shm','sked.db-wal'].forEach(f=>require('fs').rmSync(f,{force:true}))\" && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@nuxt/ui": "^2.21.0",

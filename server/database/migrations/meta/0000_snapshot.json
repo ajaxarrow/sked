@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "796ba483-b208-48ad-84fe-fe10abc17b1a",
+  "id": "fbcde432-7279-4368-a4b7-acc81fe9d602",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "extra_breaks": {
@@ -75,7 +75,7 @@
         },
         "section_id": {
           "name": "section_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -175,9 +175,16 @@
           "notNull": true,
           "autoincrement": true
         },
+        "schedule_set_id": {
+          "name": "schedule_set_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "section_id": {
           "name": "section_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -186,14 +193,14 @@
           "name": "subject_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "teacher_id": {
           "name": "teacher_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "day_of_week": {
@@ -216,10 +223,30 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "special_label": {
+          "name": "special_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {},
       "foreignKeys": {
+        "schedule_entries_schedule_set_id_schedule_sets_id_fk": {
+          "name": "schedule_entries_schedule_set_id_schedule_sets_id_fk",
+          "tableFrom": "schedule_entries",
+          "tableTo": "schedule_sets",
+          "columnsFrom": [
+            "schedule_set_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "schedule_entries_section_id_sections_id_fk": {
           "name": "schedule_entries_section_id_sections_id_fk",
           "tableFrom": "schedule_entries",
@@ -264,6 +291,59 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "schedule_sets": {
+      "name": "schedule_sets",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "school_year_id": {
+          "name": "school_year_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(datetime('now'))"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "schedule_sets_school_year_id_school_years_id_fk": {
+          "name": "schedule_sets_school_year_id_school_years_id_fk",
+          "tableFrom": "schedule_sets",
+          "tableTo": "school_years",
+          "columnsFrom": [
+            "school_year_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "schedule_types": {
       "name": "schedule_types",
       "columns": {
@@ -276,7 +356,7 @@
         },
         "school_id": {
           "name": "school_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -314,14 +394,14 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": true
+          "autoincrement": false
         },
         "school_id": {
           "name": "school_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -395,10 +475,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": true
+          "autoincrement": false
         },
         "name": {
           "name": "name",
@@ -448,14 +528,14 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": true
+          "autoincrement": false
         },
         "school_year_id": {
           "name": "school_year_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -476,7 +556,7 @@
         },
         "adviser_id": {
           "name": "adviser_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -601,7 +681,7 @@
         },
         "teacher_id": {
           "name": "teacher_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -619,6 +699,14 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "section_count": {
+          "name": "section_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
         }
       },
       "indexes": {},
@@ -672,14 +760,14 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": true
+          "autoincrement": false
         },
         "school_id": {
           "name": "school_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

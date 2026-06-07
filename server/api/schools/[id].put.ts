@@ -3,7 +3,7 @@ import { schools } from '~/server/database/schema'
 import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
-  const id = parseInt(getRouterParam(event, 'id')!)
+  const id = getRouterParam(event, 'id')!
   const body = await readBody(event)
   const [updated] = await db.update(schools)
     .set({ name: body.name, address: body.address, phone: body.phone, email: body.email })

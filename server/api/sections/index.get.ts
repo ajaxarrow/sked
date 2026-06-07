@@ -19,6 +19,6 @@ export default defineEventHandler(async (event) => {
     .from(sections)
     .leftJoin(teachers, eq(sections.adviserId, teachers.id))
     .leftJoin(yearLevels, eq(sections.yearLevelId, yearLevels.id))
-    .where(eq(sections.schoolYearId, parseInt(schoolYearId as string)))
+    .where(eq(sections.schoolYearId, schoolYearId as string))
     .all()
 })

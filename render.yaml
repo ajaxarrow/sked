@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: sked
+    runtime: node
+    buildCommand: npm install --legacy-peer-deps && npm run build
+    startCommand: node .output/server/index.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: DATABASE_PATH
+        value: /data/sked.db
+    disk:
+      name: sked-data
+      mountPath: /data
+      sizeGB: 1

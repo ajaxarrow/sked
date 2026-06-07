@@ -9,7 +9,7 @@ CREATE TABLE `extra_breaks` (
 --> statement-breakpoint
 CREATE TABLE `schedule_configs` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`section_id` integer NOT NULL,
+	`section_id` text NOT NULL,
 	`start_time` text DEFAULT '07:00' NOT NULL,
 	`end_time` text DEFAULT '17:00' NOT NULL,
 	`recess_start` text DEFAULT '09:00' NOT NULL,
@@ -23,27 +23,38 @@ CREATE TABLE `schedule_configs` (
 --> statement-breakpoint
 CREATE TABLE `schedule_entries` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`section_id` integer NOT NULL,
-	`subject_id` integer NOT NULL,
-	`teacher_id` integer NOT NULL,
+	`schedule_set_id` text NOT NULL,
+	`section_id` text NOT NULL,
+	`subject_id` integer,
+	`teacher_id` text,
 	`day_of_week` integer NOT NULL,
 	`slot_start_time` text NOT NULL,
 	`slot_end_time` text NOT NULL,
+	`special_label` text,
+	FOREIGN KEY (`schedule_set_id`) REFERENCES `schedule_sets`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`section_id`) REFERENCES `sections`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`teacher_id`) REFERENCES `teachers`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
+CREATE TABLE `schedule_sets` (
+	`id` text PRIMARY KEY NOT NULL,
+	`school_year_id` text NOT NULL,
+	`name` text NOT NULL,
+	`created_at` text DEFAULT (datetime('now')),
+	FOREIGN KEY (`school_year_id`) REFERENCES `school_years`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
 CREATE TABLE `schedule_types` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`school_id` integer NOT NULL,
+	`school_id` text NOT NULL,
 	`name` text NOT NULL,
 	FOREIGN KEY (`school_id`) REFERENCES `schools`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `school_years` (
-	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`school_id` integer NOT NULL,
+	`id` text PRIMARY KEY NOT NULL,
+	`school_id` text NOT NULL,
 	`schedule_type_id` integer NOT NULL,
 	`label` text NOT NULL,
 	`is_active` integer DEFAULT true,
@@ -53,7 +64,7 @@ CREATE TABLE `school_years` (
 );
 --> statement-breakpoint
 CREATE TABLE `schools` (
-	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`address` text,
 	`phone` text,
@@ -62,11 +73,11 @@ CREATE TABLE `schools` (
 );
 --> statement-breakpoint
 CREATE TABLE `sections` (
-	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`school_year_id` integer NOT NULL,
+	`id` text PRIMARY KEY NOT NULL,
+	`school_year_id` text NOT NULL,
 	`year_level_id` integer NOT NULL,
 	`name` text NOT NULL,
-	`adviser_id` integer,
+	`adviser_id` text,
 	FOREIGN KEY (`school_year_id`) REFERENCES `school_years`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`year_level_id`) REFERENCES `year_levels`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`adviser_id`) REFERENCES `teachers`(`id`) ON UPDATE no action ON DELETE no action
@@ -83,17 +94,18 @@ CREATE TABLE `subjects` (
 --> statement-breakpoint
 CREATE TABLE `teacher_subjects` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`teacher_id` integer NOT NULL,
+	`teacher_id` text NOT NULL,
 	`subject_id` integer NOT NULL,
 	`year_level_id` integer NOT NULL,
+	`section_count` integer DEFAULT 1 NOT NULL,
 	FOREIGN KEY (`teacher_id`) REFERENCES `teachers`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`year_level_id`) REFERENCES `year_levels`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `teachers` (
-	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`school_id` integer NOT NULL,
+	`id` text PRIMARY KEY NOT NULL,
+	`school_id` text NOT NULL,
 	`name` text NOT NULL,
 	`max_hours_per_week` integer DEFAULT 40 NOT NULL,
 	`max_hours_per_day` integer DEFAULT 8 NOT NULL,

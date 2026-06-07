@@ -1,33 +1,50 @@
 <template>
-  <UContainer class="py-10 max-w-lg">
-    <div class="flex items-center gap-3 mb-6">
-      <UButton to="/" variant="ghost" icon="i-heroicons-arrow-left" size="sm" />
-      <h1 class="text-2xl font-bold">New School</h1>
-    </div>
-    <UCard>
-      <div class="space-y-4">
-        <UFormGroup label="School Name" required>
-          <UInput v-model="form.name" placeholder="e.g. San Jose National High School" />
-        </UFormGroup>
-        <UFormGroup label="Address">
-          <UInput v-model="form.address" placeholder="Street, City, Province" />
-        </UFormGroup>
-        <div class="grid grid-cols-2 gap-4">
-          <UFormGroup label="Phone">
-            <UInput v-model="form.phone" placeholder="+63..." />
-          </UFormGroup>
-          <UFormGroup label="Email">
-            <UInput v-model="form.email" type="email" placeholder="school@deped.gov.ph" />
-          </UFormGroup>
-        </div>
-        <div class="flex gap-3 pt-2">
-          <UButton :loading="loading" :disabled="!form.name" @click="submit">Create School</UButton>
-          <UButton to="/" variant="ghost" color="gray">Cancel</UButton>
-        </div>
-        <p v-if="error" class="text-red-500 text-sm">{{ error }}</p>
+  <div>
+    <div class="page-header">
+      <div class="breadcrumb mb-2">
+        <NuxtLink to="/">Schools</NuxtLink>
+        <span class="breadcrumb-sep">/</span>
+        <span>New School</span>
       </div>
-    </UCard>
-  </UContainer>
+      <h1 class="page-title">Add School</h1>
+    </div>
+
+    <div class="page-body max-w-xl">
+      <div class="card">
+        <div class="card-header">
+          <p class="card-title">School Information</p>
+        </div>
+        <div class="card-body space-y-4">
+          <div>
+            <label class="form-label">School Name <span style="color: var(--color-danger)">*</span></label>
+            <input v-model="form.name" class="form-input" placeholder="e.g. San Jose National High School" />
+          </div>
+          <div>
+            <label class="form-label">Address</label>
+            <input v-model="form.address" class="form-input" placeholder="Street, City, Province" />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="form-label">Phone</label>
+              <input v-model="form.phone" class="form-input" placeholder="+63..." />
+            </div>
+            <div>
+              <label class="form-label">Email</label>
+              <input v-model="form.email" class="form-input" type="email" placeholder="school@deped.gov.ph" />
+            </div>
+          </div>
+          <p v-if="error" class="text-sm" style="color: var(--color-danger)">{{ error }}</p>
+          <div class="flex gap-3 pt-2">
+            <button class="btn-primary" :disabled="!form.name || loading" @click="submit">
+              <UIcon v-if="loading" name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
+              Create School
+            </button>
+            <NuxtLink to="/" class="btn-ghost">Cancel</NuxtLink>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -40,7 +57,7 @@ async function submit() {
   loading.value = true
   error.value = ''
   try {
-    const school = await $fetch<{ id: number }>('/api/schools', { method: 'POST', body: form })
+    const school = await $fetch<{ id: string }>('/api/schools', { method: 'POST', body: form })
     await router.push(`/schools/${school.id}`)
   } catch (e: any) {
     error.value = e?.data?.message ?? 'Failed to create school'
