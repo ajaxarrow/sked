@@ -13,7 +13,7 @@ function resolveDbPath(): string {
       const here = typeof __dirname !== 'undefined'
         ? __dirname
         : dirname(fileURLToPath(import.meta.url))
-      const candidates = [join(process.cwd(), 'sked.db'), join(here, 'sked.db')]
+      const candidates = ['/seed.db', join(process.cwd(), 'sked.db'), join(here, 'sked.db')]
       const seed = candidates.find(existsSync)
       if (seed) copyFileSync(seed, process.env.DATABASE_PATH)
     }
