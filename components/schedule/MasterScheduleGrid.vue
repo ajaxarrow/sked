@@ -6,7 +6,7 @@
           <tr>
             <th class="col-time">Time</th>
             <th class="col-day">Day</th>
-            <th v-for="sec in sections" :key="sec.id" class="col-section">
+            <th v-for="sec in sections" :key="sec.id" class="col-section" :title="`${sec.yearLevelName} – ${sec.name}`">
               <div class="section-header-name">{{ sec.name }}</div>
               <div class="section-header-level">{{ sec.yearLevelName }}</div>
             </th>
@@ -313,12 +313,20 @@ const vacantMap = computed(() => {
   font-size: 0.6875rem;
   color: var(--color-ink);
   letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .section-header-level {
   font-size: 0.625rem;
   color: var(--color-muted);
   margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 thead th {
@@ -329,6 +337,7 @@ thead th {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 tbody td {
