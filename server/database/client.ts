@@ -2,15 +2,20 @@ import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema'
-import { resolve, join } from 'path'
+import { resolve, join, dirname } from 'path'
 import { existsSync, copyFileSync } from 'fs'
+import { fileURLToPath } from 'url'
 
 function resolveDbPath(): string {
   if (process.env.DATABASE_PATH) {
-    // On first boot with a fresh persistent disk, seed from the committed snapshot
     if (!existsSync(process.env.DATABASE_PATH)) {
-      const seed = join(process.cwd(), 'sked.db')
-      if (existsSync(seed)) copyFileSync(seed, process.env.DATABASE_PATH)
+      // Try cwd first, then next to the server bundle
+      const here = typeof __dirname !== 'undefined'
+        ? __dirname
+        : dirname(fileURLToPath(import.meta.url))
+      const candidates = [join(process.cwd(), 'sked.db'), join(here, 'sked.db')]
+      const seed = candidates.find(existsSync)
+      if (seed) copyFileSync(seed, process.env.DATABASE_PATH)
     }
     return process.env.DATABASE_PATH
   }
