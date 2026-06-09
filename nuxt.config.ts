@@ -18,9 +18,9 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    // better-sqlite3 uses native bindings — must stay external, not bundled
+    // better-sqlite3 uses native bindings; postgres must also stay external for ESM compat
     externals: {
-      external: ['better-sqlite3'],
+      external: ['better-sqlite3', 'postgres'],
     },
   },
 })

@@ -2,8 +2,7 @@ node_modules
 .nuxt
 .output
 dist
-# WAL files are transient — never commit them
+*.db
 *.db-shm
 *.db-wal
-# sked.db is committed so it deploys with the app (Netlify bundles it into the function)
-# Add *.db back here if you want to exclude it from git again
+.env

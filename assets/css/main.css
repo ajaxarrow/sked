@@ -638,3 +638,251 @@ body {
     opacity: 0;
   }
 }
+
+/* ── Schools list ────────────────────────────────────────────────────────── */
+
+.school-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.125rem 1.25rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+}
+.school-card:hover {
+  border-color: var(--color-primary-muted);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.school-card-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: oklch(1 0 0);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.school-card-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: 1.4;
+}
+.school-card-meta {
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+  margin-top: 0.125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.school-card-arrow {
+  color: var(--color-border-strong);
+  flex-shrink: 0;
+  transition: transform 150ms ease, color 150ms ease;
+}
+.school-card:hover .school-card-arrow {
+  transform: translateX(2px);
+  color: var(--color-primary);
+}
+.school-card-skeleton {
+  height: 78px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  animation: pulse 1.5s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ── School empty state ──────────────────────────────────────────────────── */
+.school-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 5rem 2rem;
+}
+.school-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+.school-empty-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin-bottom: 0.375rem;
+}
+.school-empty-desc {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  max-width: 32ch;
+  line-height: 1.6;
+}
+
+/* ── School page header avatar ───────────────────────────────────────────── */
+.school-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: oklch(1 0 0);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Year cards (school overview) ────────────────────────────────────────── */
+.year-card {
+  display: block;
+  padding: 1.125rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  text-decoration: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+  box-shadow: var(--shadow-sm);
+}
+.year-card:hover {
+  border-color: var(--color-primary-muted);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.year-card-label {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.375rem;
+}
+.year-card-type {
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+  margin-bottom: 0.875rem;
+}
+.year-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Icon action buttons ─────────────────────────────────────────────────── */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.btn-icon:hover {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+}
+.btn-icon.danger:hover {
+  background: oklch(0.95 0.04 25);
+  color: oklch(0.48 0.20 25);
+}
+
+/* ── Subject color chips (teacher assignments) ───────────────────────────── */
+.subject-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.1875rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.subject-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+/* ── Teacher name cell ───────────────────────────────────────────────────── */
+.teacher-color-chip {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ── Modal backdrop blur + close button ─────────────────────────────────── */
+.modal-overlay {
+  backdrop-filter: blur(3px);
+}
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.modal-close:hover {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+}
+
+/* ── Stat card with icon ─────────────────────────────────────────────────── */
+.stat-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* ── Modal enter/leave animation ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .modal-enter-active { transition: opacity 150ms ease; }
+  .modal-enter-active .modal-panel { transition: opacity 150ms ease, transform 200ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .modal-leave-active { transition: opacity 120ms ease; }
+  .modal-enter-from { opacity: 0; }
+  .modal-enter-from .modal-panel { opacity: 0; transform: scale(0.97) translateY(8px); }
+  .modal-leave-to { opacity: 0; }
+}

@@ -1,7 +1,6 @@
 import { db } from '~/server/database/client'
 import { schools } from '~/server/database/schema'
 import { eq } from 'drizzle-orm'
-
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   const [school] = await db.select().from(schools).where(eq(schools.id, id))

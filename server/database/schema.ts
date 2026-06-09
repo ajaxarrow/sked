@@ -1,5 +1,4 @@
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core'
-import { sql } from 'drizzle-orm'
 
 // UUID tables — IDs exposed in URL routes
 export const schools = sqliteTable('schools', {
@@ -8,7 +7,7 @@ export const schools = sqliteTable('schools', {
   address: text('address'),
   phone: text('phone'),
   email: text('email'),
-  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
 })
 
 export const scheduleTypes = sqliteTable('schedule_types', {
@@ -39,17 +38,21 @@ export const schoolYears = sqliteTable('school_years', {
   schoolId: text('school_id').notNull().references(() => schools.id, { onDelete: 'cascade' }),
   scheduleTypeId: integer('schedule_type_id').notNull().references(() => scheduleTypes.id),
   label: text('label').notNull(),
+  startYear: integer('start_year'),
+  endYear: integer('end_year'),
+  semester: text('semester'),
   isActive: integer('is_active', { mode: 'boolean' }).default(true),
-  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
 })
 
 export const teachers = sqliteTable('teachers', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   schoolId: text('school_id').notNull().references(() => schools.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
+  colorHex: text('color_hex').notNull().default('#6366f1'),
   maxHoursPerWeek: integer('max_hours_per_week').notNull().default(40),
   maxHoursPerDay: integer('max_hours_per_day').notNull().default(8),
-  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
 })
 
 export const teacherSubjects = sqliteTable('teacher_subjects', {
@@ -93,7 +96,7 @@ export const scheduleSets = sqliteTable('schedule_sets', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   schoolYearId: text('school_year_id').notNull().references(() => schoolYears.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
 })
 
 export const scheduleEntries = sqliteTable('schedule_entries', {

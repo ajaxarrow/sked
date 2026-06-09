@@ -1,4 +1,5 @@
 <template>
+  <NuxtLoadingIndicator color="oklch(0.38 0.13 15)" :height="3" :duration="2500" :throttle="80" />
   <div class="app-shell">
     <!-- Sidebar -->
     <aside class="app-sidebar">
@@ -59,6 +60,14 @@
             >
               <UIcon name="i-heroicons-rectangle-stack" class="icon" />
               Sections
+            </NuxtLink>
+            <NuxtLink
+              :to="`/schools/${schoolId}/school-years/${yearId}/subjects`"
+              class="sidebar-link"
+              :class="{ active: route.path.endsWith('/subjects') }"
+            >
+              <UIcon name="i-heroicons-book-open" class="icon" />
+              Subjects
             </NuxtLink>
             <NuxtLink
               :to="`/schools/${schoolId}/school-years/${yearId}/schedule`"

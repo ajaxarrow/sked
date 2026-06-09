@@ -7,18 +7,23 @@
     "build": "nuxt build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:generate:pg": "drizzle-kit generate --config drizzle.config.pg.ts",
+    "db:migrate:pg": "drizzle-kit migrate --config drizzle.config.pg.ts",
     "test": "vitest run",
     "db:seed": "npx tsx scripts/seed.ts",
-    "db:reset": "node -e \"['sked.db','sked.db-shm','sked.db-wal'].forEach(f=>require('fs').rmSync(f,{force:true}))\" && npm run db:migrate && npm run db:seed"
+    "db:reseed": "npx tsx scripts/reseed.ts",
+    "db:reset": "node -e \"['sked.db','sked.db-shm','sked.db-wal'].forEach(f=>require('fs').rmSync(f,{force:true}))\" && npm run db:migrate && DATABASE_URL= npm run db:seed"
   },
   "dependencies": {
     "@nuxt/ui": "^2.21.0",
     "better-sqlite3": "^11.5.0",
     "drizzle-orm": "^0.38.4",
-    "nuxt": "^3.14.0"
+    "nuxt": "^3.14.0",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
+    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.30.4",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",

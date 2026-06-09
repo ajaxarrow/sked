@@ -1,18 +1,11 @@
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { eq } from 'drizzle-orm'
-import { resolve } from 'path'
-import * as schema from './schema.js'
-import { seedJHS } from './seed.js'
-
-const {
+import {
   schools, scheduleTypes, schoolYears, teachers, teacherSubjects,
   yearLevels, subjects, sections,
-} = schema
+} from './schema.js'
+import { seedJHS } from './seed.js'
+import { seedLNHSJHSSchedule } from './lnhs-jhs-schedule-seed.js'
 
-// ---------------------------------------------------------------------------
-// Lookup tables
-// ---------------------------------------------------------------------------
 const TEACHER_NAMES: Record<string, string> = {
   MAP: 'MAPALAD', BEL: 'BELGIRA', SUM: 'SUMALPONG', SAL: 'SALAR',
   HIS: 'HISANAN', GUL: 'GULAYAN', ACO: 'ACOP', CAP: 'CAPADA',
@@ -20,13 +13,29 @@ const TEACHER_NAMES: Record<string, string> = {
   FIE: 'FIEL', DIA: 'DIAZ', TAB: 'TABILLA', DEG: 'DE GUZMAN',
 }
 
-// ---------------------------------------------------------------------------
-export async function runLampanusanNHSSeed() {
-  const sqlite = new Database(resolve('./sked.db'))
-  sqlite.pragma('journal_mode = WAL')
-  sqlite.pragma('foreign_keys = ON')
-  const db = drizzle(sqlite, { schema })
+// 16 vivid colors — one per Tailwind hue family at the -500 level,
+// same vibes as subject colors, maximally distinct.
+const TEACHER_COLORS: Record<string, string> = {
+  MAP: '#3b82f6', // blue-500
+  BEL: '#10b981', // emerald-500
+  SUM: '#d946ef', // fuchsia-500
+  SAL: '#0ea5e9', // sky-500
+  HIS: '#a855f7', // purple-500
+  GUL: '#14b8a6', // teal-500
+  ACO: '#22c55e', // green-500
+  CAP: '#8b5cf6', // violet-500
+  SUE: '#06b6d4', // cyan-500
+  JAC: '#ec4899', // pink-500
+  FAB: '#6366f1', // indigo-500
+  ACL: '#ef4444', // red-500
+  FIE: '#84cc16', // lime-500
+  DIA: '#eab308', // yellow-500
+  TAB: '#f59e0b', // amber-500
+  DEG: '#f97316', // orange-500
+}
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function runLampanusanNHSSeed(db: any) {
   // 1. School
   const [school] = await db.insert(schools).values({
     name: 'Lampanusan National High School',
@@ -61,6 +70,9 @@ export async function runLampanusanNHSSeed() {
     schoolId: school!.id,
     scheduleTypeId: scheduleType!.id,
     label: '2026-2027',
+    startYear: 2026,
+    endYear: 2027,
+    semester: null,
     isActive: true,
   }).returning()
   console.log('✓ School year created')
@@ -94,6 +106,7 @@ export async function runLampanusanNHSSeed() {
     const [teacher] = await db.insert(teachers).values({
       schoolId: school!.id,
       name: TEACHER_NAMES[def.key]!,
+      colorHex: TEACHER_COLORS[def.key]!,
       maxHoursPerWeek: def.maxHoursPerWeek,
       maxHoursPerDay: Math.ceil(def.maxHoursPerWeek / 5),
     }).returning()
@@ -118,17 +131,17 @@ export async function runLampanusanNHSSeed() {
 
   // 5. Sections
   const sectionDefs: Array<{ key: string; name: string; grade: number; adviserKey: string }> = [
-    { key: 'G7Hope',  name: 'Grade 7 - Hope',  grade: 7,  adviserKey: 'MAP' },
-    { key: 'G7Faith',  name: 'Grade 7 - Faith',  grade: 7,  adviserKey: 'BEL' },
-    { key: 'G7Love',  name: 'Grade 7 - Love',  grade: 7,  adviserKey: 'SUM' },
-    { key: 'G8Altair',  name: 'Grade 8 - Altair',  grade: 8,  adviserKey: 'SAL' },
-    { key: 'G8Antares',  name: 'Grade 8 - Antares',  grade: 8,  adviserKey: 'HIS' },
-    { key: 'G8Alhena',  name: 'Grade 8 - Alhena',  grade: 8,  adviserKey: 'GUL' },
-    { key: 'G9Gold',  name: 'Grade 9 - Gold',  grade: 9,  adviserKey: 'ACO' },
-    { key: 'G9Fuchsia',  name: 'Grade 9 - Fuchsia',  grade: 9,  adviserKey: 'CAP' },
-    { key: 'G9Crimson',  name: 'Grade 9 - Crimson',  grade: 9,  adviserKey: 'SUE' },
+    { key: 'G7Hope',       name: 'Grade 7 - Hope',        grade: 7,  adviserKey: 'MAP' },
+    { key: 'G7Faith',      name: 'Grade 7 - Faith',       grade: 7,  adviserKey: 'BEL' },
+    { key: 'G7Love',       name: 'Grade 7 - Love',        grade: 7,  adviserKey: 'SUM' },
+    { key: 'G8Altair',     name: 'Grade 8 - Altair',      grade: 8,  adviserKey: 'SAL' },
+    { key: 'G8Antares',    name: 'Grade 8 - Antares',     grade: 8,  adviserKey: 'HIS' },
+    { key: 'G8Alhena',     name: 'Grade 8 - Alhena',      grade: 8,  adviserKey: 'GUL' },
+    { key: 'G9Gold',       name: 'Grade 9 - Gold',        grade: 9,  adviserKey: 'ACO' },
+    { key: 'G9Fuchsia',    name: 'Grade 9 - Fuchsia',     grade: 9,  adviserKey: 'CAP' },
+    { key: 'G9Crimson',    name: 'Grade 9 - Crimson',     grade: 9,  adviserKey: 'SUE' },
     { key: 'G10Stalactite', name: 'Grade 10 - Stalactite', grade: 10, adviserKey: 'JAC' },
-    { key: 'G10Helictite', name: 'Grade 10 - Helictite ', grade: 10, adviserKey: 'FAB' },
+    { key: 'G10Helictite',  name: 'Grade 10 - Helictite',  grade: 10, adviserKey: 'FAB' },
   ]
 
   const sectionIdMap: Record<string, string> = {}
@@ -144,7 +157,8 @@ export async function runLampanusanNHSSeed() {
   }
   console.log('✓ 11 sections created')
 
-  console.log('✓ Seed complete')
+  // 6. Seed the full LNHS JHS 2026-2027 schedule
+  await seedLNHSJHSSchedule(db, schoolYear!.id, teacherIdMap, sectionIdMap, subjMap)
 
-  sqlite.close()
+  console.log('✓ Seed complete')
 }

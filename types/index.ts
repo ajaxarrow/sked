@@ -34,6 +34,9 @@ export interface SchoolYear {
   schoolId: string
   scheduleTypeId: number
   label: string
+  startYear: number | null
+  endYear: number | null
+  semester: string | null
   isActive: boolean | null
   createdAt: string | null
 }
@@ -42,6 +45,7 @@ export interface Teacher {
   id: string
   schoolId: string
   name: string
+  colorHex: string
   maxHoursPerWeek: number
   maxHoursPerDay: number
   subjects: TeacherSubjectAssignment[]
@@ -54,6 +58,7 @@ export interface TeacherSubjectAssignment {
   yearLevelId: number
   sectionCount: number
   subjectName: string
+  subjectColor: string
   yearLevelName: string
 }
 
@@ -86,6 +91,7 @@ export interface ScheduleEntry {
   subjectName: string | null
   subjectColor: string | null
   teacherName: string | null
+  teacherColor: string | null
   specialLabel: string | null
 }
 

@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1749470000000,
+      "tag": "0000_init",
+      "breakpoints": false
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1749480000000,
+      "tag": "0001_add_teacher_color_and_year_fields",
+      "breakpoints": false
+    }
+  ]
+}

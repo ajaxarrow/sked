@@ -7,6 +7,7 @@ export interface ExportEntry {
   subjectColor: string | null
   teacherId: string | null
   teacherName: string | null
+  teacherColor: string | null
   dayOfWeek: number
   slotStartTime: string
   slotEndTime: string
@@ -22,7 +23,7 @@ export interface ExportSection {
 export interface MasterExportParams {
   schoolName: string
   yearLabel: string
-  scheduleSetName: string
+  scheduleSetName?: string
   sections: ExportSection[]
   entries: ExportEntry[]
   colorBy?: 'subject' | 'teacher'
@@ -106,24 +107,12 @@ function tint(hex: string, amount = 0.80): string {
   return `#${tr.toString(16).padStart(2, '0')}${tg.toString(16).padStart(2, '0')}${tb.toString(16).padStart(2, '0')}`
 }
 
-const TEACHER_COLORS = [
-  '#e05c5c', '#c0783a', '#a08810', '#4a9a4a', '#2e8b6e',
-  '#4a7fd4', '#6a50d0', '#a840c8', '#c84888', '#3aaecc',
-  '#7b6ea0', '#cf6679', '#5e9e6e', '#d4804a', '#5588d4',
-]
-
-function teacherColorFromId(id: string | null | undefined): string {
-  if (!id) return '#6366f1'
-  let h = 0
-  for (let i = 0; i < id.length; i++) {
-    h = ((h << 5) - h) + id.charCodeAt(i)
-    h |= 0
-  }
-  return TEACHER_COLORS[Math.abs(h) % TEACHER_COLORS.length]!
-}
-
-function resolveColor(subjectColor: string | null | undefined, teacherId: string | null | undefined, colorBy?: 'subject' | 'teacher'): string {
-  if (colorBy === 'teacher') return teacherColorFromId(teacherId)
+function resolveColor(
+  subjectColor: string | null | undefined,
+  teacherColor: string | null | undefined,
+  colorBy?: 'subject' | 'teacher',
+): string {
+  if (colorBy === 'teacher') return teacherColor ?? '#6366f1'
   return subjectColor ?? '#6366f1'
 }
 
@@ -305,7 +294,7 @@ function buildSectionTable(
           const { bg, color } = specialStyle(e.specialLabel)
           rows += `<td bgcolor="${bg}" style="background-color:${bg};color:${color};font-style:italic;font-weight:600;">${esc(e.specialLabel)}</td>`
         } else if (e.subjectName) {
-          const color = resolveColor(e.subjectColor, e.teacherId, colorBy)
+          const color = resolveColor(e.subjectColor, e.teacherColor, colorBy)
           const bg    = tint(color)
           rows += `<td bgcolor="${bg}" style="background-color:${bg};">`
           rows += `<span class="sn" style="color:${color};">${esc(e.subjectName)}</span><br>`
@@ -388,7 +377,7 @@ function buildTeacherTable(
         const e  = tm.get(`${day.num}|${slot.start}`)
         const sp = specials.get(`${day.num}|${slot.start}`)
         if (e?.subjectName) {
-          const color = resolveColor(e.subjectColor, e.teacherId, colorBy)
+          const color = resolveColor(e.subjectColor, e.teacherColor, colorBy)
           const bg    = tint(color)
           rows += `<td bgcolor="${bg}" style="background-color:${bg};">`
           rows += `<span class="sn" style="color:${color};">${esc(e.subjectName)}</span><br>`
@@ -422,7 +411,7 @@ function buildTeacherTable(
 // ── Master table builder ──────────────────────────────────────────────────────
 
 function buildMasterTableHtml(params: MasterExportParams): string {
-  const { schoolName, yearLabel, scheduleSetName, sections, entries } = params
+  const { schoolName, yearLabel, sections, entries } = params
 
   // section|day|slot → entry
   const mm = new Map<string, ExportEntry>()
@@ -498,7 +487,7 @@ function buildMasterTableHtml(params: MasterExportParams): string {
             const { bg, color } = specialStyle(e.specialLabel)
             rows += `<td bgcolor="${bg}" style="background-color:${bg};color:${color};font-style:italic;font-weight:600;font-size:7pt;">${esc(e.specialLabel)}</td>`
           } else if (e.subjectName) {
-            const color = resolveColor(e.subjectColor, e.teacherId, params.colorBy)
+            const color = resolveColor(e.subjectColor, e.teacherColor, params.colorBy)
             const bg    = tint(color)
             rows += `<td bgcolor="${bg}" style="background-color:${bg};">`
             rows += `<span class="sn" style="color:${color};font-size:7pt;">${esc(e.subjectName)}</span><br>`
@@ -517,7 +506,7 @@ function buildMasterTableHtml(params: MasterExportParams): string {
   return `
     <h2>${esc(schoolName)}</h2>
     <h1>School Program</h1>
-    <p class="ds">${esc(yearLabel)} &mdash; ${esc(scheduleSetName)}</p>
+    <p class="ds">${esc(yearLabel)}</p>
     <table>
       <thead>
         <tr>
@@ -534,9 +523,9 @@ function buildMasterTableHtml(params: MasterExportParams): string {
 // ── Multi-page builders (from master data) ────────────────────────────────────
 
 function buildAllSectionPages(params: MasterExportParams): string {
-  const { yearLabel, scheduleSetName, sections, entries } = params
+  const { schoolName, yearLabel, sections, entries } = params
   const slots  = collectSlots(entries)
-  const sub    = `${yearLabel} — ${scheduleSetName}`
+  const sub    = `${schoolName} · ${yearLabel}`
 
   return sections.map((sec, i) => {
     const secEntries = entries.filter(e => e.sectionId === sec.id)
@@ -546,9 +535,9 @@ function buildAllSectionPages(params: MasterExportParams): string {
 }
 
 function buildAllTeacherPages(params: MasterExportParams): string {
-  const { schoolName, yearLabel, scheduleSetName, sections, entries } = params
+  const { schoolName, yearLabel, sections, entries } = params
   const slots = collectSlots(entries)
-  const sub   = `${yearLabel} — ${scheduleSetName}`
+  const sub   = `${schoolName} · ${yearLabel}`
 
   // sectionId → name map
   const secNames = new Map(sections.map(s => [s.id, s.name]))
@@ -610,7 +599,7 @@ export interface TeachingLoadRow {
 export interface TeachingLoadExportParams {
   schoolName: string
   yearLabel: string
-  scheduleSetName: string
+  scheduleSetName?: string
   rows: TeachingLoadRow[]
 }
 
@@ -621,7 +610,7 @@ function fmtHM(minutes: number): string {
 }
 
 function buildTeachingLoadTableHtml(params: TeachingLoadExportParams): string {
-  const { schoolName, yearLabel, scheduleSetName, rows } = params
+  const { schoolName, yearLabel, rows } = params
 
   let tbody = ''
   for (const row of rows) {
@@ -646,7 +635,7 @@ function buildTeachingLoadTableHtml(params: TeachingLoadExportParams): string {
   return `
     <h2>${esc(schoolName)}</h2>
     <h1>Teaching Load</h1>
-    <p class="ds">${esc(yearLabel)} &mdash; ${esc(scheduleSetName)}</p>
+    <p class="ds">${esc(yearLabel)}</p>
     <table>
       <thead>
         <tr>
@@ -686,9 +675,9 @@ export function useScheduleExport() {
 
   function exportSectionSchedule(params: SectionExportParams): void {
     const slots = collectSlots(params.entries)
-    const sub   = `Weekly Schedule — ${params.yearLabel}`
+    const sub   = `${params.schoolName} · ${params.yearLabel}`
     const html  = buildSectionTable(params.sectionName, sub, params.entries, slots, params.colorBy)
-    downloadDoc(html, `schedule-${params.sectionName}`, `${params.sectionName} – ${params.yearLabel}`)
+    downloadDoc(html, `schedule-${params.sectionName}-${params.yearLabel}`, `${params.sectionName} – ${params.yearLabel}`)
   }
 
   function exportTeacherSchedule(params: TeacherExportParams): void {
@@ -710,9 +699,9 @@ export function useScheduleExport() {
       teacherId:     e.teacherId ?? params.teacherId ?? null,
     }))
 
-    const sub  = `Weekly Teaching Schedule — ${params.yearLabel}`
+    const sub  = `${params.schoolName} · ${params.yearLabel}`
     const html = buildTeacherTable(params.teacherName, sub, normRows, specials, slots, params.colorBy)
-    downloadDoc(html, `schedule-${params.teacherName}`, `${params.teacherName} – ${params.yearLabel}`)
+    downloadDoc(html, `schedule-${params.teacherName}-${params.yearLabel}`, `${params.teacherName} – ${params.yearLabel}`)
   }
 
   function exportTeachingLoad(params: TeachingLoadExportParams): void {

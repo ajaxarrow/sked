@@ -1,14 +1,11 @@
 import { db } from '~/server/database/client'
 import { scheduleEntries, subjects, teachers, sections, yearLevels, scheduleSets } from '~/server/database/schema'
 import { eq, and, desc } from 'drizzle-orm'
-
 export default defineEventHandler(async (event) => {
   const { schoolYearId, scheduleSetId: setIdParam } = getQuery(event)
-
   if (!schoolYearId) {
     throw createError({ statusCode: 400, message: 'schoolYearId required' })
   }
-
   let scheduleSetId: string | null = null
   if (setIdParam) {
     scheduleSetId = setIdParam as string
@@ -19,11 +16,9 @@ export default defineEventHandler(async (event) => {
       .limit(1)
     scheduleSetId = latest?.id ?? null
   }
-
   if (!scheduleSetId) {
     return { sections: [], entries: [], scheduleSetId: null }
   }
-
   const allSections = await db
     .select({
       id: sections.id,
@@ -38,8 +33,6 @@ export default defineEventHandler(async (event) => {
     .leftJoin(yearLevels, eq(sections.yearLevelId, yearLevels.id))
     .where(eq(sections.schoolYearId, schoolYearId as string))
     .orderBy(yearLevels.sortOrder, sections.name)
-    .all()
-
   const allEntries = await db
     .select({
       id: scheduleEntries.id,
@@ -53,13 +46,12 @@ export default defineEventHandler(async (event) => {
       subjectName: subjects.name,
       subjectColor: subjects.colorHex,
       teacherName: teachers.name,
+      teacherColor: teachers.colorHex,
       specialLabel: scheduleEntries.specialLabel,
     })
     .from(scheduleEntries)
     .leftJoin(subjects, eq(scheduleEntries.subjectId, subjects.id))
     .leftJoin(teachers, eq(scheduleEntries.teacherId, teachers.id))
     .where(eq(scheduleEntries.scheduleSetId, scheduleSetId))
-    .all()
-
   return { sections: allSections, entries: allEntries, scheduleSetId }
 })

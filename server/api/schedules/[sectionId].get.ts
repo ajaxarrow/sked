@@ -1,13 +1,10 @@
 import { db } from '~/server/database/client'
 import { scheduleEntries, subjects, teachers, scheduleSets } from '~/server/database/schema'
 import { eq, and, desc } from 'drizzle-orm'
-
 export default defineEventHandler(async (event) => {
   const sectionId = getRouterParam(event, 'sectionId')!
   const { scheduleSetId: setIdParam, schoolYearId } = getQuery(event)
-
   let scheduleSetId: string | null = null
-
   if (setIdParam) {
     scheduleSetId = setIdParam as string
   } else if (schoolYearId) {
@@ -17,11 +14,9 @@ export default defineEventHandler(async (event) => {
       .limit(1)
     scheduleSetId = latest?.id ?? null
   }
-
   if (!scheduleSetId) {
     return { entries: [], slotVacancies: {} }
   }
-
   const entries = await db
     .select({
       id: scheduleEntries.id,
@@ -35,6 +30,7 @@ export default defineEventHandler(async (event) => {
       subjectName: subjects.name,
       subjectColor: subjects.colorHex,
       teacherName: teachers.name,
+      teacherColor: teachers.colorHex,
       specialLabel: scheduleEntries.specialLabel,
     })
     .from(scheduleEntries)
@@ -44,13 +40,10 @@ export default defineEventHandler(async (event) => {
       eq(scheduleEntries.sectionId, sectionId),
       eq(scheduleEntries.scheduleSetId, scheduleSetId),
     ))
-    .all()
-
-  const allTeachers = await db.select({ id: teachers.id, name: teachers.name }).from(teachers).all()
+  const allTeachers = await db.select({ id: teachers.id, name: teachers.name }).from(teachers)
   const slotKeys = [...new Set(
     entries.filter(e => !e.specialLabel).map(e => `${e.dayOfWeek}-${e.slotStartTime}`)
   )]
-
   const slotVacancies: Record<string, Array<{ teacherId: string; teacherName: string }>> = {}
   for (const key of slotKeys) {
     const [dayStr, start] = key.split('-', 2) as [string, string]
@@ -62,12 +55,10 @@ export default defineEventHandler(async (event) => {
         eq(scheduleEntries.dayOfWeek, parseInt(dayStr)),
         eq(scheduleEntries.slotStartTime, start),
       ))
-      .all()
     const busySet = new Set(busyIds.map(b => b.teacherId).filter(Boolean))
     slotVacancies[key] = allTeachers
       .filter(t => !busySet.has(t.id))
       .map(t => ({ teacherId: t.id, teacherName: t.name }))
   }
-
   return { entries, slotVacancies, scheduleSetId }
 })

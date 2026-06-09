@@ -5,24 +5,19 @@ import {
   generateAllSchedules, buildFlagCeremonyEntries,
   generateTimeSlots, type SchedulerContext, type SubjectRequirement, type ScheduleEntry,
 } from '~/server/utils/scheduler'
-
 function toMin(t: string) {
   const [h, m] = t.split(':').map(Number)
   return h! * 60 + m!
 }
-
 // Keep retrying until 0 shortfalls or this hard cap is hit.
 // In practice 3 attempts is enough; cap prevents runaway on genuinely unsolvable configs.
 const MAX_ATTEMPTS = 20
-
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { sectionIds, config, schoolYearId, scheduleName, scheduleSetId: existingSetId } = body
-
   if (!sectionIds?.length || !schoolYearId) {
     throw createError({ statusCode: 400, message: 'sectionIds and schoolYearId are required' })
   }
-
   // Resolve or create the schedule set
   let scheduleSetId: string
   if (existingSetId) {
@@ -38,7 +33,6 @@ export default defineEventHandler(async (event) => {
     }).returning()
     scheduleSetId = set!.id
   }
-
   const params = {
     startTime: config?.startTime ?? '07:00',
     endTime: config?.endTime ?? '17:00',
@@ -53,27 +47,20 @@ export default defineEventHandler(async (event) => {
     maxHoursPerTeacherPerDay: config?.maxHoursPerTeacherPerDay ?? 6,
     adviserFirstSlot: config?.adviserFirstSlot ?? false,
   }
-
   const slots = generateTimeSlots(params)
-
   // Pre-load all section data and requirements once — reused across all retry attempts
   type SectionData = {
     section: { id: string; name: string; yearLevelId: number; adviserId: string | null }
     requirements: SubjectRequirement[]
   }
-
   const sectionData: SectionData[] = []
   for (const sectionId of sectionIds) {
     const [section] = await db.select().from(sections).where(eq(sections.id, sectionId))
     if (!section) continue
-
     const [yearLevel] = await db.select().from(yearLevels).where(eq(yearLevels.id, section.yearLevelId))
     if (!yearLevel) continue
-
     const subjectList = await db.select().from(subjects)
       .where(eq(subjects.scheduleTypeId, yearLevel.scheduleTypeId))
-      .all()
-
     const requirements = await Promise.all(subjectList.map(async (sub) => {
       const eligible = await db
         .select({ teacherId: teacherSubjects.teacherId, sectionCount: teacherSubjects.sectionCount })
@@ -82,7 +69,6 @@ export default defineEventHandler(async (event) => {
           eq(teacherSubjects.subjectId, sub.id),
           eq(teacherSubjects.yearLevelId, section.yearLevelId),
         ))
-        .all()
       return {
         subjectId: sub.id,
         subjectName: sub.name,
@@ -91,21 +77,16 @@ export default defineEventHandler(async (event) => {
         eligibleTeachers: eligible,
       } satisfies SubjectRequirement
     }))
-
     sectionData.push({ section, requirements })
   }
-
   // Run scheduling up to MAX_ATTEMPTS times (pure in-memory) and commit the best result.
   // Each attempt uses fresh randomness; the best (fewest shortfalls) is written to DB.
   type Shortfall = { sectionName: string; subject: string; needed: number; assigned: number }
-
   let bestEntries = new Map<string, ScheduleEntry[]>()
   let bestShortfalls: Shortfall[] = []
   let bestGenerated = 0
   let attemptsUsed = 0
-
   console.log(`[Sked] Generating schedule for ${sectionData.length} sections (max ${MAX_ATTEMPTS} attempts)`)
-
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     attemptsUsed = attempt + 1
     const ctx: SchedulerContext = {
@@ -116,19 +97,16 @@ export default defineEventHandler(async (event) => {
     const attemptEntries = new Map<string, ScheduleEntry[]>()
     const attemptShortfalls: Shortfall[] = []
     let attemptGenerated = 0
-
     const sectionsForScheduler = sectionData.map(({ section, requirements }) => ({
       sectionId: section.id,
       requirements,
       adviserTeacherId: section.adviserId ?? undefined,
     }))
     const allEntriesMap = generateAllSchedules(sectionsForScheduler, params, ctx)
-
     for (const { section, requirements } of sectionData) {
       const entries = allEntriesMap.get(section.id) ?? []
       attemptEntries.set(section.id, entries)
       attemptGenerated += entries.length
-
       for (const req of requirements) {
         const got = entries.filter(e => e.subjectId === req.subjectId).length
         if (got < req.hoursPerWeek) {
@@ -141,13 +119,11 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
-
     if (attempt === 0 || attemptShortfalls.length < bestShortfalls.length) {
       bestEntries = new Map(attemptEntries)
       bestShortfalls = attemptShortfalls
       bestGenerated = attemptGenerated
     }
-
     if (attemptShortfalls.length === 0) {
       console.log(`[Sked] Attempt ${attemptsUsed}/${MAX_ATTEMPTS}: ✓ PERFECT — ${attemptGenerated} slots placed`)
       break
@@ -156,14 +132,12 @@ export default defineEventHandler(async (event) => {
       console.log(`[Sked] Attempt ${attemptsUsed}/${MAX_ATTEMPTS}: ${attemptShortfalls.length} shortfall(s) → ${summary}`)
     }
   }
-
   if (bestShortfalls.length > 0) {
     const summary = bestShortfalls.map(s => `${s.sectionName}/${s.subject} (${s.assigned}/${s.needed})`).join(', ')
     console.warn(`[Sked] Committed best result after ${attemptsUsed} attempts with ${bestShortfalls.length} unresolved shortfall(s): ${summary}`)
   } else {
     console.log(`[Sked] Schedule committed — ${bestGenerated} entries written`)
   }
-
   // Insert the best scheduling result into the DB
   let totalGenerated = 0
   for (const { section } of sectionData) {
@@ -171,7 +145,6 @@ export default defineEventHandler(async (event) => {
     const fcEntries = params.flagCeremony.enabled
       ? buildFlagCeremonyEntries(section.id, slots, params.flagCeremony)
       : []
-
     const allEntries = [...fcEntries, ...entries]
     if (allEntries.length) {
       await db.insert(scheduleEntries).values(
@@ -180,7 +153,6 @@ export default defineEventHandler(async (event) => {
       totalGenerated += entries.length
     }
   }
-
   // Insert break rows (recess, lunch, extra) as special entries for each section
   const breakRows: Array<typeof scheduleEntries.$inferInsert> = []
   for (const sectionId of sectionIds) {
@@ -213,6 +185,5 @@ export default defineEventHandler(async (event) => {
       await db.insert(scheduleEntries).values(breakRows.slice(i, i + 100))
     }
   }
-
   return { scheduleSetId, generated: totalGenerated, shortfalls: bestShortfalls, attemptsUsed }
 })

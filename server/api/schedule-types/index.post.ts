@@ -1,7 +1,6 @@
 import { db } from '~/server/database/client'
 import { scheduleTypes } from '~/server/database/schema'
 import { seedJHS } from '~/server/database/seed'
-
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   if (!body?.schoolId || !body?.name) {

@@ -203,23 +203,8 @@ const assignedSubjects = computed(() => {
   return [...new Map(items.map((item) => [item.subjectName + '|' + item.sectionName, item])).values()]
 })
 
-const TEACHER_COLORS = [
-  '#e05c5c', '#c0783a', '#a08810', '#4a9a4a', '#2e8b6e',
-  '#4a7fd4', '#6a50d0', '#a840c8', '#c84888', '#3aaecc',
-  '#7b6ea0', '#cf6679', '#5e9e6e', '#d4804a', '#5588d4',
-]
-
-function teacherColorFromId(id: string): string {
-  let h = 0
-  for (let i = 0; i < id.length; i++) {
-    h = ((h << 5) - h) + id.charCodeAt(i)
-    h |= 0
-  }
-  return TEACHER_COLORS[Math.abs(h) % TEACHER_COLORS.length]!
-}
-
 function cellColor(_entry: TeachingEntry): string {
-  if (props.colorBy === 'teacher') return teacherColorFromId(props.teacher.id)
+  if (props.colorBy === 'teacher') return props.teacher.colorHex ?? '#6366f1'
   return _entry.subjectColor ?? '#6366f1'
 }
 

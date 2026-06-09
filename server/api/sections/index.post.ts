@@ -1,6 +1,5 @@
 import { db } from '~/server/database/client'
 import { sections } from '~/server/database/schema'
-
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   if (!body?.schoolYearId || !body?.yearLevelId || !body?.name) {

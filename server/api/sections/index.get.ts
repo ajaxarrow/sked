@@ -1,11 +1,9 @@
 import { db } from '~/server/database/client'
 import { sections, teachers, yearLevels } from '~/server/database/schema'
 import { eq } from 'drizzle-orm'
-
 export default defineEventHandler(async (event) => {
   const { schoolYearId } = getQuery(event)
   if (!schoolYearId) throw createError({ statusCode: 400, message: 'schoolYearId required' })
-
   return db
     .select({
       id: sections.id,
@@ -20,5 +18,4 @@ export default defineEventHandler(async (event) => {
     .leftJoin(teachers, eq(sections.adviserId, teachers.id))
     .leftJoin(yearLevels, eq(sections.yearLevelId, yearLevels.id))
     .where(eq(sections.schoolYearId, schoolYearId as string))
-    .all()
 })

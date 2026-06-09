@@ -8,6 +8,13 @@
       "when": 1780665756307,
       "tag": "0000_red_gorilla_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1781017417365,
+      "tag": "0001_late_gideon",
+      "breakpoints": true
     }
   ]
 }

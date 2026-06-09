@@ -1,6 +1,5 @@
 import { db } from '~/server/database/client'
 import { scheduleSets } from '~/server/database/schema'
-
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   if (!body?.schoolYearId || !body?.name) {
