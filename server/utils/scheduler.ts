@@ -112,7 +112,7 @@ export function buildFlagCeremonyEntries(
     if (!fcAppliesToDay(day, fc)) continue
     for (const slot of slots) {
       if (slotOverlapsFC(slot, fc)) {
-        entries.push({ sectionId, subjectId: null, teacherId: null, dayOfWeek: day, slotStartTime: slot.start, slotEndTime: slot.end, specialLabel: 'Flag Ceremony / RHGP' })
+        entries.push({ sectionId, subjectId: null, teacherId: null, dayOfWeek: day, slotStartTime: slot.start, slotEndTime: slot.end, specialLabel: 'Flag Ceremony' })
       }
     }
   }
